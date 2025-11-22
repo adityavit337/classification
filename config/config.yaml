@@ -1,0 +1,26 @@
+# Configuration file for the classification pipeline
+
+# OCR settings
+ocr:
+  model_name: 'deepseek-ai/DeepSeek-OCR'  # DeepSeek-OCR model from HuggingFace
+
+# Text processing settings
+text_processing:
+  similarity_threshold: 0.8  # Threshold for merging pages (0-1)
+  max_chunk_length: 512  # Maximum length for text chunks
+  chunk_overlap: 50  # Overlap between chunks
+
+# Classification settings
+classification:
+  model_path: 'models/deberta_classifier'  # Path to trained DeBERTa model
+  batch_size: 8  # Batch size for inference
+  confidence_threshold: 0.5  # Minimum confidence for classification
+  max_length: 512  # Maximum sequence length
+
+# Paths
+paths:
+  raw_data: 'data/raw'  # Input images
+  processed_data: 'data/processed'  # Preprocessed images
+  models: 'models'  # Model directory
+  outputs: 'outputs'  # Classification results
+  logs: 'logs'  # Log files
