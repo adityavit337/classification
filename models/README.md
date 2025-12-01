@@ -1,13 +1,18 @@
-# Place your trained DeBERTa model files here
+# Models Directory
 
-Your model directory should contain:
-- config.json
-- pytorch_model.bin (or model.safetensors)
-- tokenizer files (tokenizer.json, vocab.txt, etc.)
+Store your trained models here for the classification pipeline.
 
-Example structure:
+## Directory Structure
+
 ```
 models/
+├── deberta_classifier/          # Your trained DeBERTa Q&A classifier
+│   ├── config.json              # Model configuration
+│   ├── pytorch_model.bin        # Model weights (or model.safetensors)
+│   ├── tokenizer_config.json    # Tokenizer configuration
+│   ├── vocab.txt                # Vocabulary
+│   ├── special_tokens_map.json  # Special tokens
+│   └── tokenizer.json           # Tokenizer (alternative)
 └── deberta_classifier/
     ├── config.json
     ├── pytorch_model.bin

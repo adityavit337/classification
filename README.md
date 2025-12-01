@@ -1,130 +1,147 @@
-# Text Classification Pipeline
+# OCR + Classification Pipeline
 
-A complete pipeline for extracting text from images and PDF files using DeepSeek-OCR and classifying it as questions or answers using a trained DeBERTa model.
+A complete pipeline for extracting text from PDF files using **Qwen3-VL-4B** OCR and classifying it into questions/answers/metadata using **Qwen3-4B-Instruct-2507** few-shot learning.
+
+## Features
+
+- 🔍 **OCR Extraction**: Qwen3-VL-4B vision-language model for accurate text extraction
+- 🏷️ **Few-Shot Classification**: Qwen3-4B-Instruct with carefully crafted examples
+- 📦 **Smart Line Merging**: Automatically groups related lines into logical blocks
+- ⚡ **Pattern Matching**: Fast regex-based classification for obvious cases
+- 📊 **Organized Output**: Separate files for questions, answers, and full results
 
 ## Project Structure
 
 ```
 Classification/
 ├── src/
-│   ├── ocr/                   # DeepSeek-OCR text extraction module
+│   ├── ocr/                   # Qwen3-VL-4B OCR module
 │   │   ├── __init__.py
 │   │   └── ocr_extractor.py
-│   ├── text_processing/       # Text processing and merging module
+│   ├── text_processing/       # Text processing and merging
 │   │   ├── __init__.py
 │   │   └── text_processor.py
-│   ├── classification/        # DeBERTa classification module
+│   ├── classification/        # Qwen3-4B-Instruct classifier
 │   │   ├── __init__.py
-│   │   └── classifier.py
-│   ├── utils/                 # Utility functions
-│   │   ├── __init__.py
-│   │   ├── config.py
-│   │   └── logger.py
-│   └── __init__.py
+│   │   └── qwen_classifier.py
+│   └── utils/                 # Utilities (config, logging)
 ├── data/
-│   ├── raw/                   # Input images
-│   └── processed/             # (Not used - kept for compatibility)
-├── models/                    # Trained models directory
+│   └── raw/                   # Input PDF files
+├── models/                    # Model storage (optional)
 ├── config/
-│   └── config.yaml           # Configuration file
+│   └── config.yaml           # Configuration
 ├── outputs/                   # Classification results
 ├── logs/                     # Log files
-├── tests/                    # Unit tests
-├── requirements.txt          # Python dependencies
-├── pipeline.py              # Main pipeline script
-└── README.md                # This file
+├── pipeline.py              # Main entry point
+├── requirements.txt          
+└── README.md
 ```
 
 ## Installation
 
-1. Install Python dependencies:
+1. **Install dependencies**:
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Install Poppler (required for PDF processing):
+2. **Install Poppler** (for PDF processing):
    - **Windows**: Download from https://github.com/oschwartz10612/poppler-windows/releases/ and add to PATH
    - **Linux**: `sudo apt-get install poppler-utils`
    - **Mac**: `brew install poppler`
 
-3. The DeepSeek-OCR model will be automatically downloaded from HuggingFace on first use
-
-4. Place your trained DeBERTa model in the `models/deberta_classifier` directory
+3. Models are automatically downloaded from HuggingFace on first use:
+   - `Qwen/Qwen3-VL-4B-Instruct` (~8GB) - OCR
+   - `Qwen/Qwen3-4B-Instruct-2507` (~8GB) - Classification
 
 ## Usage
 
-### Full Pipeline
-
-Run the complete pipeline on your images and/or PDF files:
+### Full Pipeline (PDF → Classification)
 
 ```bash
-python pipeline.py --input data/raw --output outputs/results.json
+# Process a PDF file
+python pipeline.py data/raw/test_2.pdf
+
+# Specify output directory
+python pipeline.py data/raw/assignment1.pdf --output results/
 ```
 
-The pipeline automatically detects and processes both image files (.jpg, .jpeg, .png, .tiff, .bmp) and PDF files (.pdf).
+### Classification Only (Pre-extracted Text)
 
-### Individual Modules
+```bash
+# Classify already extracted text
+python pipeline.py --text outputs/test_2_extracted.txt
+```
 
-You can also use individual modules:
+### Python API
 
 ```python
-from src.ocr import OCRExtractor
-from src.text_processing import TextProcessor
-from src.classification import DeBERTaClassifier
+from src.classification import QwenClassifier
 
-# Extract text using DeepSeek-OCR (works with both images and PDFs)
-ocr = OCRExtractor(model_name='deepseek-ai/DeepSeek-OCR')
+# Initialize classifier
+classifier = QwenClassifier()
 
-# From image
-text = ocr.extract_text('image.jpg')
+# Classify text lines
+lines = ["Q1: What is AWS?", "Ans: Amazon Web Services", "Page 1"]
+results = classifier.classify_document(lines)
 
-# From PDF (automatically processes all pages)
-text = ocr.extract_text('document.pdf')
-
-# Process text
-processor = TextProcessor()
-processed_text = processor.clean_text(text)
-
-# Classify
-classifier = DeBERTaClassifier('models/deberta_classifier')
-result = classifier.predict(processed_text)
+print(f"Questions: {len(results['questions'])}")
+print(f"Answers: {len(results['answers'])}")
+print(f"Metadata: {len(results['metadata'])}")
 ```
+
+## Output Files
+
+After running the pipeline, you'll find:
+
+```
+outputs/
+├── {filename}_extracted.txt    # Raw OCR text
+├── {filename}_results.json     # Full classification results
+├── {filename}_questions.txt    # Extracted questions
+└── {filename}_answers.txt      # Extracted answers
+```
+
+### Results JSON Format
+
+```json
+{
+  "questions": [
+    {"text": "Q1: What is...", "confidence": 0.98, "reasoning": "Pattern matched"}
+  ],
+  "answers": [...],
+  "metadata": [...],
+  "statistics": {
+    "total_original_lines": 174,
+    "total_merged_blocks": 102,
+    "questions_count": 10,
+    "answers_count": 29,
+    "metadata_count": 63
+  }
+}
+```
+
+## Classification Categories
+
+| Category | Examples |
+|----------|----------|
+| **question** | `Q1:`, `Ques-1:`, interrogative sentences, problem scenarios |
+| **answer** | `Ans:`, `Answer:`, technical explanations, solutions |
+| **metadata** | Student names, page numbers, section headers, dates |
 
 ## Configuration
 
-Edit `config/config.yaml` to customize:
-- DeepSeek-OCR model settings
-- Text processing thresholds
-- Classification model settings
-- File paths
+Edit `config/config.yaml` for custom settings:
 
-## Pipeline Steps
-
-1. **OCR Extraction**: Extract text directly from images and PDFs using DeepSeek-OCR
-   - State-of-the-art OCR model from DeepSeek AI
-   - Supports both image files and multi-page PDF documents
-   - No preprocessing required
-   - High accuracy on various image types
-   - Automatic model download from HuggingFace
-
-2. **Text Processing**: Clean and merge text from multiple pages
-   - Remove artifacts
-   - Normalize whitespace
-   - Merge related pages based on similarity
-   - Split into chunks if needed
-
-3. **Classification**: Classify text as question or answer
-   - Uses trained DeBERTa model
-   - Provides confidence scores
-   - Batch processing support
-
-## Testing
-
-Run tests:
-```bash
-pytest tests/
+```yaml
+ocr:
+  model_name: 'Qwen/Qwen3-VL-4B-Instruct'
+  
+classification:
+  model_name: 'Qwen/Qwen3-4B-Instruct-2507'
 ```
 
-## License
+## Requirements
 
-MIT License
+- Python 3.10+
+- CUDA-capable GPU (8GB+ VRAM recommended)
+- ~16GB disk space for models

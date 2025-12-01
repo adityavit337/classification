@@ -22,6 +22,9 @@ models/*.pt
 models/*.pth
 models/*.h5
 models/*.onnx
+models/*.safetensors
+models/deberta_*/
+models/deberta_classifier*/
 
 # Data files
 data/raw/*
