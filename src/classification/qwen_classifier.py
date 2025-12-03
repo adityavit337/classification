@@ -55,6 +55,9 @@ class QwenClassifier:
         {"text": "What are the key components needed to handle 10x traffic increase during flash sales?", "label": "question"},
         {"text": "How would you implement auto-scaling for the database layer?", "label": "question"},
         {"text": "Why is caching important in high-traffic scenarios?", "label": "question"},
+        {"text": "Explain the difference b/w photosynthesis and symbioses.", "label": "question"},
+        {"text": "Differentiate b/w mitosis & meiosis.", "label": "question"},
+        {"text": "Determine the difference b/w North & South?", "label": "question"},
         
         # Problem statements/scenarios (questions)
         {"text": "The current architecture relies on a single EC2 instance for the web server and a single RDS instance. This will fail under heavy load. Design a solution.", "label": "question"},
@@ -66,61 +69,83 @@ class QwenClassifier:
         {"text": "Answer: 'Precisely' is the synonym of exactly. The author uses this word to emphasize accuracy.", "label": "answer"},
         {"text": "Ans: The pirate that came to rob them was actually a kind-hearted sailor in disguise.", "label": "answer"},
         
+        # Answers WITHOUT explicit markers (statements that respond to questions)
+        {"text": "Photosynthesis is good for plant while symbioses is not.", "label": "answer"},
+        {"text": "At North is north & south is south.", "label": "answer"},
+        {"text": "Mitosis produces identical diploid cells used for growth & repair.", "label": "answer"},
+        {"text": "The cell is the basic unit of life.", "label": "answer"},
+        
         # Technical explanations (answers without markers)
         {"text": "Application Layer: Amazon ECS or EKS containers behind an Application Load Balancer provide horizontal scaling.", "label": "answer"},
         {"text": "Database Layer: Amazon Aurora with read replicas and ElastiCache Redis for session management.", "label": "answer"},
         {"text": "The solution uses Amazon S3 for storage, CloudFront for CDN, and Lambda for serverless processing.", "label": "answer"},
         {"text": "Auto Scaling Groups automatically adjust EC2 instance count based on CPU utilization metrics.", "label": "answer"},
         
-        # Metadata - names and IDs
-        {"text": "Dhruv Thapar 23BEC1025", "label": "metadata"},
-        {"text": "Name: John Smith Roll No: 12345", "label": "metadata"},
-        {"text": "Submitted by: Alice Johnson, Student ID: CS2023001", "label": "metadata"},
+        # Narrative answers (story-based responses without markers)
+        # IMPORTANT: "When X happened, Y felt..." is a narrative answer, NOT a question
+        {"text": "When Valli saw the dead cow by the roadside, she was deeply saddened and felt a pang of disappointment.", "label": "answer"},
+        {"text": "When he opened the door, he was surprised to find the room empty.", "label": "answer"},
+        {"text": "When the teacher asked, the student confidently answered the question.", "label": "answer"},
+        {"text": "During her first journey, Valli experienced the thrill of seeing the world outside her village.", "label": "answer"},
+        {"text": "She enjoyed the sights of the canal, the palm trees, the mountains, and the green fields.", "label": "answer"},
+        {"text": "He felt a sense of wonder and amazement when he first saw the grand palace.", "label": "answer"},
+        {"text": "The sight of the lifeless cow made her reflect on the nature of life and death.", "label": "answer"},
         
-        # Metadata - headers and section titles
-        {"text": "Short questions", "label": "metadata"},
-        {"text": "Long Answer Questions", "label": "metadata"},
-        {"text": "Section A: Multiple Choice Questions", "label": "metadata"},
-        {"text": "DA-2 AWS Assignment", "label": "metadata"},
+        # Single-sentence factual answers
+        {"text": "Southwest monsoon winds account for rainfall along the Malabar coast.", "label": "answer"},
+        {"text": "The Thar Desert experiences the highest diurnal range of temperature in India.", "label": "answer"},
+        {"text": "Jet streams are narrow belts of high altitude winds in the troposphere.", "label": "answer"},
+        {"text": "The seasonal reversal in wind direction during a year is called the monsoon.", "label": "answer"},
         
-        # Metadata - page markers and formatting
-        {"text": "Page No.", "label": "metadata"},
-        {"text": "--- PAGE 1 ---", "label": "metadata"},
-        {"text": "Page 5 of 10", "label": "metadata"},
+        # Definition and explanation answers
+        {"text": "These are narrow belts of high altitude (above 12,000 m) in the troposphere.", "label": "answer"},
+        {"text": "This is because it is filled with sand which gets heated up quickly during day and cooled very quickly during nights.", "label": "answer"},
+        {"text": "Monsoon tends to have 'breaks' in rainfall which means there are wet and dry spells in between.", "label": "answer"},
+        
+        # Metadata - ONLY short words/phrases (max 3 words)
         {"text": "DOMS", "label": "metadata"},
-        
-        # Metadata - dates and administrative
-        {"text": "Date: 15/11/2024", "label": "metadata"},
-        {"text": "Due Date: November 30, 2024", "label": "metadata"},
-        {"text": "Total Marks: 50", "label": "metadata"},
+        {"text": "Page No.", "label": "metadata"},
+        {"text": "Date", "label": "metadata"},
+        {"text": "Name:", "label": "metadata"},
+        {"text": "Roll No:", "label": "metadata"},
+        {"text": "Section A", "label": "metadata"},    
+        {"text": "--- PAGE 1 ---", "label": "metadata"},
+        {"text": "Total Marks:", "label": "metadata"},
     ]
     
     # Patterns for quick pre-classification (high confidence)
     QUESTION_PATTERNS = [
-        r'^Q\s*[\d\-\.:]+',           # Q1, Q-1, Q.1, Q:1
-        r'^Ques[\s\-\.:]',             # Ques, Ques-, Ques.
-        r'^Question\s*[\d\-\.:]*',     # Question, Question 1
-        r'^\(\s*[a-z]\s*\)',           # (a), (b), etc.
-        r'^\d+\s*[\.\)]\s*[A-Z]',      # 1. What, 2) How
+        r'^Q\s*[\d\-\.:]+',             # Q1, Q-1, Q.1, Q:1
+        r'^Q\s+[A-Z][a-z]',             # Q What, Q How, Q Why
+        r'^Ques[\s\-\.:]',              # Ques, Ques-, Ques.
+        r'^Question\s*[\d\-\.:]*',      # Question, Question 1
+        r'^\(\s*[a-z]\s*\)',            # (a), (b), etc.
+        r'^\d+\s*[\.\)]\s*[A-Z]',       # 1. What, 2) How
+        r'^(What|Why|How|Who|Where|When|Which|Explain|Describe|Define|Determine|Differentiate)\s', # Interrogative starts
     ]
     
     ANSWER_PATTERNS = [
-        r'^Ans[\s\-\.:]+',             # Ans, Ans-, Ans., Ans:
-        r'^Answer[\s\-\.:]*',          # Answer, Answer:
-        r'^Solution[\s\-\.:]*',        # Solution, Solution:
-        r'^A[\s]*[\d]+[\s\-\.:]+',     # A1, A-1, A.1
+        r'^Ans\s',                      # Ans followed by space
+        r'^Ans[\-\.:]+',                # Ans-, Ans., Ans:
+        r'^Answer\s*[\d\-\.:]*',        # Answer, Answer:, Answer 2
+        r'^Solution[\s\-\.:]*',         # Solution, Solution:
+        r'^A[\s]*[\d]+[\s\-\.:]+',      # A1, A-1, A.1
     ]
     
     METADATA_PATTERNS = [
         r'^---\s*PAGE\s*\d+\s*---',    # --- PAGE 1 ---
         r'^Page\s*(No\.?|Number)?',    # Page No., Page Number
         r'^\d+\s*(of|/)\s*\d+$',       # 5 of 10, 5/10
-        r'^(Section|Part)\s*[A-Z\d]',  # Section A, Part 1
+        r'^(Section|Part)\s*[A-Z]\s*[:.]?\s*$',  # Section A, Part 1 (must be short header)
+        r'^(Section|Part)\s*[A-Z]\s*[:.-]',  # Section A:, Part B-
         r'^(Name|Roll|ID|Student)\s*[:.]', # Name:, Roll No:
         r'^\d{2}[A-Z]{2,3}\d{4,}',     # 23BEC1025 (student ID pattern)
         r'^(Date|Due|Submitted)[\s:]*', # Date:, Due Date:
         r'^Total\s*(Marks|Points)',    # Total Marks
         r'^[A-Z]{2,5}$',               # Short all-caps (DOMS, AWS)
+        r'^(x\s*)+[xo]?\s*$',          # Tic-tac-toe patterns like "x x x"
+        r'^[xo]\s+[xo]\s+[xo]$',       # More tic-tac-toe
+        r'^(Short|Long|Very Short|Medium)\s+(Answer\s+)?(type\s+)?Questions?\s*$',  # Section headers like "Long Answer type Questions"
     ]
     
     # System prompt for classification
@@ -222,6 +247,54 @@ Reply with ONLY one word: question, answer, or metadata."""
         
         return None
     
+    def _split_on_qa_markers(self, lines: List[str]) -> List[str]:
+        """
+        Pre-process lines to split on Q/A markers that appear mid-line.
+        
+        For example: "Answer is X Q What is Y?" becomes two lines.
+        
+        Args:
+            lines: Original text lines
+            
+        Returns:
+            List of lines with Q/A markers at line starts
+        """
+        result = []
+        
+        # Patterns to split on (these indicate new Q or A starting mid-line)
+        split_patterns = [
+            r'\s+(Q\s*\d*[\.\:\-]?\s+)',           # " Q ", " Q1 ", " Q: "
+            r'\s+(Q\s+[A-Z])',                      # " Q What", " Q How"
+            r'\s+(Ans\s*[\.\:\-]?\s*)',             # " Ans ", " Ans: "
+            r'\s+(Answer\s*\d*[\.\:\-]?\s*)',       # " Answer ", " Answer 2"
+        ]
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            
+            # Try to split on each pattern
+            split_made = False
+            for pattern in split_patterns:
+                match = re.search(pattern, line, re.IGNORECASE)
+                if match:
+                    # Split at this position
+                    before = line[:match.start()].strip()
+                    after = line[match.start():].strip()
+                    
+                    if before:
+                        result.append(before)
+                    if after:
+                        result.append(after)
+                    split_made = True
+                    break
+            
+            if not split_made:
+                result.append(line)
+        
+        return result
+    
     def _merge_related_lines(self, lines: List[str]) -> List[Tuple[str, List[int]]]:
         """
         Merge related lines that belong to the same question or answer.
@@ -246,15 +319,17 @@ Reply with ONLY one word: question, answer, or metadata."""
         
         # Patterns that indicate start of new content block
         new_block_patterns = [
-            r'^Q\s*[\d\-\.\:\(]',       # Q1, Q-1, Q(a)
-            r'^Ques[\s\-\.\:]',          # Ques, Ques-1
-            r'^Question\s*[\d\-\.\:]*',  # Question 1
-            r'^Ans[\s\-\.\:]+',          # Ans:, Ans-1
-            r'^Answer[\s\-\.\:]*',       # Answer:
-            r'^Solution[\s\-\.\:]*',     # Solution:
-            r'^---\s*PAGE',              # Page markers
-            r'^\d+\s*[\.\)]\s+[A-Z]',    # Numbered items like "1. What"
-            r'^[A-Z][a-z]+\s+Layer:',    # Application Layer:, Database Layer:
+            r'^Q\s*[\d\-\.\:\(]',         # Q1, Q-1, Q(a)
+            r'^Q\s+[A-Z]',                 # Q What, Q How (Q followed by word)
+            r'^Ques[\s\-\.\:]',            # Ques, Ques-1
+            r'^Question\s*[\d\-\.\:]*',    # Question 1
+            r'^Ans\s',                     # Ans followed by space
+            r'^Ans[\.\:\-]+',              # Ans:, Ans-, Ans.
+            r'^Answer[\s\-\.\:]*',         # Answer:
+            r'^Solution[\s\-\.\:]*',       # Solution:
+            r'^---\s*PAGE',                # Page markers
+            r'^\d+\s*[\.\)]\s+[A-Z]',      # Numbered items like "1. What"
+            r'^[A-Z][a-z]+\s+Layer:',      # Application Layer:, Database Layer:
         ]
         
         # Patterns that indicate standalone metadata
@@ -268,34 +343,51 @@ Reply with ONLY one word: question, answer, or metadata."""
         ]
         
         def is_new_block_start(text: str) -> bool:
+            text = text.strip()
             for pattern in new_block_patterns:
-                if re.match(pattern, text.strip(), re.IGNORECASE):
+                if re.match(pattern, text, re.IGNORECASE):
                     return True
+            # Also check if it's a question (ends with ?) and is substantial
+            if text.endswith('?') and len(text) > 20:
+                return True
             return False
         
         def is_standalone(text: str) -> bool:
             text = text.strip()
-            # Very short lines are usually standalone
-            if len(text) < 15 and not text.endswith(','):
+            # Very short lines are usually standalone (but not if ending with ?)
+            if len(text) < 12 and not text.endswith('?') and not text.endswith(','):
                 return True
             for pattern in standalone_patterns:
                 if re.match(pattern, text, re.IGNORECASE):
                     return True
             return False
         
-        def is_continuation(text: str) -> bool:
+        def is_continuation(text: str, prev_text: str = "") -> bool:
             text = text.strip()
             if not text:
                 return False
-            # Starts with lowercase or continues mid-sentence
+            
+            # If previous line ended with a sentence terminator, this is likely NOT a continuation
+            # unless it starts with lowercase (indicating broken sentence)
+            if prev_text and prev_text.rstrip().endswith(('.', '!', '?')):
+                # Only continue if this line clearly continues the sentence
+                if not text[0].islower():
+                    return False
+            
+            # Starts with lowercase - definitely a continuation
             if text[0].islower():
                 return True
+            
             # Starts with common continuation words
             continuation_words = ['the', 'and', 'or', 'but', 'which', 'that', 'this', 'these', 'those', 'for', 'with', 'from', 'to', 'in', 'on', 'at', 'by']
             first_word = text.split()[0].lower().rstrip('.,;:')
             if first_word in continuation_words:
                 return True
             return False
+        
+        def prev_block_text() -> str:
+            """Get the last line of current block for context."""
+            return current_block[-1] if current_block else ""
         
         for i, line in enumerate(lines):
             line = line.strip()
@@ -321,23 +413,17 @@ Reply with ONLY one word: question, answer, or metadata."""
                 current_block = [line]
                 current_indices = [i]
             
-            elif is_continuation(line) and current_block:
+            elif is_continuation(line, prev_block_text()) and current_block:
                 # Continue current block
                 current_block.append(line)
                 current_indices.append(i)
             
             else:
-                # Not clearly a continuation, could be new content
-                # If current block is short, might still merge
-                if current_block and len(' '.join(current_block)) < 100:
-                    current_block.append(line)
-                    current_indices.append(i)
-                else:
-                    # Save current block and start new
-                    if current_block:
-                        merged.append((' '.join(current_block), current_indices.copy()))
-                    current_block = [line]
-                    current_indices = [i]
+                # Not a continuation - start new block
+                if current_block:
+                    merged.append((' '.join(current_block), current_indices.copy()))
+                current_block = [line]
+                current_indices = [i]
         
         # Don't forget the last block
         if current_block:
@@ -557,13 +643,18 @@ Reply with ONLY one word: question, answer, or metadata."""
         # Filter non-empty lines
         non_empty_lines = [line.strip() for line in lines if line.strip()]
         
+        # Pre-process: split lines that have Q/A markers mid-line
+        print(f"  Pre-processing {len(non_empty_lines)} lines (splitting on Q/A markers)...")
+        split_lines = self._split_on_qa_markers(non_empty_lines)
+        print(f"  After splitting: {len(split_lines)} lines")
+        
         if merge_lines:
-            print(f"  Merging {len(non_empty_lines)} lines into logical blocks...")
-            merged_blocks = self._merge_related_lines(non_empty_lines)
+            print(f"  Merging into logical blocks...")
+            merged_blocks = self._merge_related_lines(split_lines)
             texts_to_classify = [block[0] for block in merged_blocks]
             print(f"  Created {len(texts_to_classify)} blocks for classification")
         else:
-            texts_to_classify = non_empty_lines
+            texts_to_classify = split_lines
             merged_blocks = [(line, [i]) for i, line in enumerate(non_empty_lines)]
         
         logger.info(f"Classifying {len(texts_to_classify)} blocks with Qwen3-4B-Instruct")

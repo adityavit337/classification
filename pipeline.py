@@ -3,7 +3,7 @@ Main Classification Pipeline using Qwen3-4B-Instruct-2507
 
 This pipeline:
 1. Extracts text from PDFs using Qwen3-VL-4B OCR
-2. Classifies text into questions/answers/metadata using Qwen3-4B-Instruct few-shot learning
+2. Classifies text into questions/answers/metadata using Qwen3-4B-Instruct zero-shot learning
 3. Saves organized results
 
 Usage:
@@ -23,7 +23,7 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from src.ocr.ocr_extractor import OCRExtractor
-from src.classification.qwen_classifier import QwenClassifier
+from src.classification.zeroshot_classifier import ZeroShotClassifier
 
 
 def run_full_pipeline(pdf_path: str, output_dir: str = "outputs") -> dict:
@@ -42,7 +42,7 @@ def run_full_pipeline(pdf_path: str, output_dir: str = "outputs") -> dict:
     print("=" * 70)
     print(f"CLASSIFICATION PIPELINE")
     print(f"Input: {pdf_path}")
-    print(f"Model: Qwen3-4B-Instruct-2507 (few-shot)")
+    print(f"Model: Qwen3-4B-Instruct-2507 (zero-shot)")
     print("=" * 70)
     
     # Step 1: OCR Extraction
@@ -62,11 +62,11 @@ def run_full_pipeline(pdf_path: str, output_dir: str = "outputs") -> dict:
         f.write(extracted_text)
     print(f"  ✓ Saved to: {extracted_path}")
     
-    # Step 2: Classification
-    print("\n[STEP 2] Classification (Qwen3-4B-Instruct)...")
+    # Step 2: Zero-Shot Classification
+    print("\n[STEP 2] Zero-Shot Classification (Qwen3-4B-Instruct)...")
     print("-" * 50)
     
-    classifier = QwenClassifier()
+    classifier = ZeroShotClassifier()
     results = classifier.classify_document(lines, merge_lines=True, show_progress=True)
     
     # Step 3: Save Results
@@ -95,7 +95,7 @@ def run_classification_only(text_path: str, output_dir: str = "outputs") -> dict
     print("=" * 70)
     print(f"CLASSIFICATION PIPELINE (Text Only)")
     print(f"Input: {text_path}")
-    print(f"Model: Qwen3-4B-Instruct-2507 (few-shot)")
+    print(f"Model: Qwen3-4B-Instruct-2507 (zero-shot)")
     print("=" * 70)
     
     # Load text
@@ -108,11 +108,11 @@ def run_classification_only(text_path: str, output_dir: str = "outputs") -> dict
     lines = [line.strip() for line in text.split('\n') if line.strip()]
     print(f"  ✓ Loaded {len(lines)} lines")
     
-    # Classification
-    print("\n[STEP 2] Classification (Qwen3-4B-Instruct)...")
+    # Zero-Shot Classification
+    print("\n[STEP 2] Zero-Shot Classification (Qwen3-4B-Instruct)...")
     print("-" * 50)
     
-    classifier = QwenClassifier()
+    classifier = ZeroShotClassifier()
     results = classifier.classify_document(lines, merge_lines=True, show_progress=True)
     
     # Save Results

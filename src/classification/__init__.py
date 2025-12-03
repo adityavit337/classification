@@ -1,13 +1,13 @@
-"""Classification module using Qwen3-4B-Instruct-2507 few-shot classification."""
+"""Classification module using Qwen3-4B-Instruct-2507 zero-shot classification."""
 
-from .qwen_classifier import (
-    QwenClassifier,
+from .zeroshot_classifier import (
+    ZeroShotClassifier,
     ClassificationResult,
     TextType
 )
 
 __all__ = [
-    'QwenClassifier',
+    'ZeroShotClassifier',
     'ClassificationResult',
     'TextType'
 ]
