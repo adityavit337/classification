@@ -237,12 +237,37 @@ Reply with ONLY one word: question, answer, or metadata"""
         else:
             return "unknown", 0.5, f"LLM response unclear: {response}"
     
+    def _split_page_markers(self, lines: List[str]) -> List[str]:
+        """
+        Pre-process lines to split page markers from content that follows on same line.
+        E.g., '--- PAGE 2 --- d) Who were known as...' becomes two separate lines.
+        """
+        result = []
+        page_pattern = r'^(---\s*PAGE\s*\d+\s*---)\s*(.+)$'
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            match = re.match(page_pattern, line, re.IGNORECASE)
+            if match:
+                result.append(match.group(1))  # Page marker only
+                if match.group(2).strip():
+                    result.append(match.group(2).strip())  # Content after marker
+            else:
+                result.append(line)
+        
+        return result
+    
     def _merge_related_lines(self, lines: List[str]) -> List[Tuple[str, List[int]]]:
         """
         Merge related lines that belong to the same question or answer.
         """
         if not lines:
             return []
+        
+        # First, split page markers from content
+        lines = self._split_page_markers(lines)
         
         merged_blocks = []
         current_block = []
@@ -269,6 +294,10 @@ Reply with ONLY one word: question, answer, or metadata"""
         def is_continuation(text: str, prev_text: str) -> bool:
             text = text.strip()
             if not text:
+                return False
+            
+            # Never merge with page markers
+            if prev_text and re.match(r'^---\s*PAGE\s*\d+\s*---$', prev_text.strip(), re.IGNORECASE):
                 return False
             
             # Check if previous text ends with sentence terminator
